@@ -234,8 +234,8 @@ func initGenesis(c *internalChain) error {
 	return nil
 }
 
-func initNodes(c *internalChain) error {
-	if err := c.createAndInitValidators(2); err != nil {
+func initNodes(c *internalChain, numVal int) error {
+	if err := c.createAndInitValidators(numVal); err != nil {
 		return err
 	}
 

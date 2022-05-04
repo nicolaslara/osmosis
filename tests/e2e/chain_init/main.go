@@ -13,10 +13,12 @@ func main() {
 	var (
 		dataDir string
 		chainId string
+		numVal  int
 	)
 
 	flag.StringVar(&dataDir, "data-dir", "", "chain data directory")
 	flag.StringVar(&chainId, "chain-id", "", "chain ID")
+	flag.IntVar(&numVal, "num-val", 2, "number of validators for each chain")
 	flag.Parse()
 
 	if len(dataDir) == 0 {
@@ -27,7 +29,7 @@ func main() {
 		panic(err)
 	}
 
-	createdChain, err := chain.Init(chainId, dataDir)
+	createdChain, err := chain.Init(chainId, dataDir, numVal)
 	if err != nil {
 		panic(err)
 	}
