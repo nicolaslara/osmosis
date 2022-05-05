@@ -266,7 +266,7 @@ func initNodes(c *internalChain, numVal int) error {
 	return nil
 }
 
-func initValidatorConfigs(c *internalChain) error {
+func initValidatorConfigs(c *internalChain, pruning string, pruningKeepRecent string, pruningInterval string, snapshotInterval uint64, snapshotKeepRecent uint32, telemetryEnabled bool, telemetryRetentionTime int64, prometheusEnabled bool) error {
 	for i, val := range c.validators {
 		tmCfgPath := filepath.Join(val.configDir(), "config", "config.toml")
 
@@ -287,6 +287,7 @@ func initValidatorConfigs(c *internalChain) error {
 		valConfig.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 		valConfig.StateSync.Enable = false
 		valConfig.LogLevel = "info"
+		valConfig.Instrumentation.Prometheus = prometheusEnabled
 
 		var peers []string
 
@@ -308,8 +309,15 @@ func initValidatorConfigs(c *internalChain) error {
 		appCfgPath := filepath.Join(val.configDir(), "config", "app.toml")
 
 		appConfig := srvconfig.DefaultConfig()
+		appConfig.BaseConfig.Pruning = pruning
+		appConfig.BaseConfig.PruningKeepRecent = pruningKeepRecent
+		appConfig.BaseConfig.PruningInterval = pruningInterval
 		appConfig.API.Enable = true
 		appConfig.MinGasPrices = fmt.Sprintf("%s%s", MinGasPrice, OsmoDenom)
+		appConfig.StateSync.SnapshotInterval = snapshotInterval
+		appConfig.StateSync.SnapshotKeepRecent = snapshotKeepRecent
+		appConfig.Telemetry.Enabled = telemetryEnabled
+		appConfig.Telemetry.PrometheusRetentionTime = telemetryRetentionTime
 
 		srvconfig.WriteConfigFile(appCfgPath, appConfig)
 	}
