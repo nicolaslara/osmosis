@@ -32,6 +32,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	aliastypes "github.com/osmosis-labs/osmosis/v10/x/alias/types"
 
 	icahost "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host"
 	icahostkeeper "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host/keeper"
@@ -49,6 +50,7 @@ import (
 
 	_ "github.com/osmosis-labs/osmosis/v10/client/docs/statik"
 	owasm "github.com/osmosis-labs/osmosis/v10/wasmbinding"
+	aliaskeeper "github.com/osmosis-labs/osmosis/v10/x/alias/keeper"
 	epochskeeper "github.com/osmosis-labs/osmosis/v10/x/epochs/keeper"
 	epochstypes "github.com/osmosis-labs/osmosis/v10/x/epochs/types"
 	gammkeeper "github.com/osmosis-labs/osmosis/v10/x/gamm/keeper"
@@ -88,6 +90,7 @@ type AppKeepers struct {
 
 	// "Normal" keepers
 	AccountKeeper        *authkeeper.AccountKeeper
+	AliasKeeper          *aliaskeeper.Keeper
 	BankKeeper           *bankkeeper.BaseKeeper
 	AuthzKeeper          *authzkeeper.Keeper
 	StakingKeeper        *stakingkeeper.Keeper
@@ -339,6 +342,12 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
 		wasmOpts...,
 	)
 	appKeepers.WasmKeeper = &wasmKeeper
+
+	aliasKeeper := aliaskeeper.NewKeeper(
+		appCodec,
+		appKeepers.keys[aliastypes.StoreKey],
+	)
+	appKeepers.AliasKeeper = &aliasKeeper
 
 	// wire up x/wasm to IBC
 	ibcRouter.AddRoute(wasm.ModuleName, wasm.NewIBCHandler(appKeepers.WasmKeeper, appKeepers.IBCKeeper.ChannelKeeper))

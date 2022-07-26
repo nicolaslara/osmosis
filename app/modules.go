@@ -5,6 +5,8 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/v3/modules/core"
 	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
+	"github.com/osmosis-labs/osmosis/v10/x/alias"
+	aliastypes "github.com/osmosis-labs/osmosis/v10/x/alias/types"
 
 	ica "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts"
 	icatypes "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/types"
@@ -67,6 +69,7 @@ import (
 // moduleAccountPermissions defines module account permissions
 // TODO: Having to input nil's here is unacceptable, we need a way to automatically derive this.
 var moduleAccountPermissions = map[string][]string{
+	aliastypes.ModuleName:                    nil,
 	authtypes.FeeCollectorName:               nil,
 	distrtypes.ModuleName:                    nil,
 	icatypes.ModuleName:                      nil,
@@ -136,6 +139,7 @@ func appModules(
 			app.GAMMKeeper,
 			app.EpochsKeeper,
 		),
+		alias.NewAppModule(appCodec, *app.AliasKeeper),
 		tokenfactory.NewAppModule(appCodec, *app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper),
 	}
 }
@@ -206,6 +210,7 @@ func OrderInitGenesis(allModuleNames []string) []string {
 		authz.ModuleName,
 		// wasm after ibc transfer
 		wasm.ModuleName,
+		aliastypes.ModuleName,
 	}
 }
 

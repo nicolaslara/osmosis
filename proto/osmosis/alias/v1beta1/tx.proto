@@ -1,0 +1,25 @@
+syntax = "proto3";
+package osmosis.alias.v1beta1;
+
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/osmosis-labs/osmosis/v10/x/alias/types";
+
+// Msg defines the alias module's gRPC message service.
+service Msg { rpc Execute(MsgExec) returns (MsgExecResponse); }
+
+// MsgExecResponse defines the Msg/MsgExecResponse response type.
+message MsgExecResponse { repeated bytes results = 1; }
+
+// MsgExec attempts to execute the provided messages using
+// authorizations granted to the grantee. Each message should have only
+// one signer corresponding to the granter of the authorization.
+message MsgExec {
+  string sender = 1 [ (gogoproto.moretags) = "yaml:\"sender\"" ];
+  string as = 2 [ (gogoproto.moretags) = "yaml:\"as\"" ];
+  repeated google.protobuf.Any msgs = 3
+      [ (cosmos_proto.accepts_interface) = "sdk.Msg" ];
+}
