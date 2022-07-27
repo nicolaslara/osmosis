@@ -508,6 +508,7 @@ func (appKeepers *AppKeepers) SetupHooks() {
 // TODO: We need to automate this, by bundling with a module struct...
 func KVStoreKeys() []string {
 	return []string{
+		aliastypes.StoreKey,
 		authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
