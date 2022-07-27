@@ -1,8 +1,10 @@
 package keeper_test
 
 import (
+	"fmt"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/osmosis-labs/osmosis/v10/app"
 	"github.com/stretchr/testify/require"
@@ -84,8 +86,21 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 func (suite *KeeperTestSuite) TestSimpleMsgExec() {
 	suite.T().Log("TestSimpleMsgExec start")
+
+	sender := suite.TestAccs[0].String()
+
+	err := simapp.FundAccount(
+		suite.App.BankKeeper,
+		suite.Ctx,
+		suite.TestAccs[0],
+		sdk.NewCoins(sdk.NewInt64Coin("uosmo", 1_000_000_000)),
+	)
+	require.NoError(suite.T(), err)
+
 	// tmp message to match the interface. The sender will be set by the chain
-	execMsg := types.NewMsgExec(suite.TestAccs[0].String(), suite.contract.String(), "{\"authorize\": {\"msgs\": [], \"sender\": \"osmo111111111111111111111111111111111111111\"}}")
+	msg := fmt.Sprintf("{\"authorize\": {\"msgs\": [], \"sender\": \"%s\"}}", suite.TestAccs[1])
+	suite.T().Log("msg", msg)
+	execMsg := types.NewMsgExec(sender, suite.contract.String(), msg)
 	res, err := suite.msgServer.Execute(sdk.WrapSDKContext(suite.Ctx), execMsg)
 	suite.T().Log(res, err)
 	suite.T().Log("TestSimpleMsgExec end")
