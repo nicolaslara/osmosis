@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -43,12 +42,7 @@ func (k Keeper) GetContractStore(ctx sdk.Context) sdk.KVStore {
 
 func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, msg string) ([]byte, error) {
 	// ToDo: Build auth message: "{sender: sender, msgs: [msg]}"
-	fmt.Println("HERE")
-	fmt.Println(msg)
 	result, err := k.wasmKeeper.QuerySmart(ctx, as, []byte(msg))
-	fmt.Println("HERE2")
-	fmt.Println(result)
-	fmt.Println(err)
 
 	if err != nil {
 		return nil, err

@@ -29,25 +29,26 @@ func TestKeeperTestSuite(t *testing.T) {
 }
 
 // Based on wasmbindings/test/custom_query_test.go
-func SetupCustomApp(suite *KeeperTestSuite, addr sdk.AccAddress) (*app.OsmosisApp, sdk.AccAddress) {
-	osmosis := app.Setup(false)
-	suite.Ctx = osmosis.BaseApp.NewContext(false, tmproto.Header{Height: 1, ChainID: "osmosis-1", Time: time.Now().UTC()})
+func (suite *KeeperTestSuite) SetupCustomApp() {
+	suite.App = app.Setup(false)
+	suite.TestAccs = apptesting.CreateRandomAccounts(3)
+	suite.Ctx = suite.App.BaseApp.NewContext(false, tmproto.Header{Height: 1, ChainID: "osmosis-1", Time: time.Now().UTC()})
 
-	wasmKeeper := osmosis.WasmKeeper
-
-	storeAuthCode(suite, osmosis, addr)
-
+	wasmKeeper := suite.App.WasmKeeper
+	addr := suite.TestAccs[0]
+	suite.storeAuthCode(addr)
 	cInfo := wasmKeeper.GetCodeInfo(suite.Ctx, 1)
 	require.NotNil(suite.T(), cInfo)
 
-	auth := instantiateAuthContract(suite, osmosis, addr)
+	auth := suite.instantiateAuthContract(addr)
 	require.NotEmpty(suite.T(), auth)
 
-	return osmosis, auth
+	suite.msgServer = keeper.NewMsgServerImpl(*suite.App.AliasKeeper)
+	suite.contract = auth
 }
 
-func storeAuthCode(suite *KeeperTestSuite, osmosis *app.OsmosisApp, addr sdk.AccAddress) {
-	govKeeper := osmosis.GovKeeper
+func (suite *KeeperTestSuite) storeAuthCode(addr sdk.AccAddress) {
+	govKeeper := suite.App.GovKeeper
 	wasmCode, err := ioutil.ReadFile("../testdata/alias.wasm")
 	require.NoError(suite.T(), err)
 
@@ -66,9 +67,9 @@ func storeAuthCode(suite *KeeperTestSuite, osmosis *app.OsmosisApp, addr sdk.Acc
 	require.NoError(suite.T(), err)
 }
 
-func instantiateAuthContract(suite *KeeperTestSuite, osmosis *app.OsmosisApp, funder sdk.AccAddress) sdk.AccAddress {
+func (suite *KeeperTestSuite) instantiateAuthContract(funder sdk.AccAddress) sdk.AccAddress {
 	initMsgBz := []byte("{}")
-	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(osmosis.WasmKeeper)
+	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(suite.App.WasmKeeper)
 	codeID := uint64(1)
 	addr, _, err := contractKeeper.Instantiate(suite.Ctx, codeID, funder, funder, initMsgBz, "auth contract", nil)
 	require.NoError(suite.T(), err)
@@ -78,24 +79,14 @@ func instantiateAuthContract(suite *KeeperTestSuite, osmosis *app.OsmosisApp, fu
 
 // The actual tests
 func (suite *KeeperTestSuite) SetupTest() {
-	suite.Setup()
-	suite.msgServer = keeper.NewMsgServerImpl(*suite.App.AliasKeeper)
-	_, addr := SetupCustomApp(suite, suite.TestAccs[0])
-	suite.contract = addr
+	suite.SetupCustomApp()
 }
 
 func (suite *KeeperTestSuite) TestSimpleMsgExec() {
 	suite.T().Log("TestSimpleMsgExec start")
-	suite.T().Log("Instantiating contract")
-
-	suite.T().Log("Running the test")
-
 	// tmp message to match the interface. The sender will be set by the chain
 	execMsg := types.NewMsgExec(suite.TestAccs[0].String(), suite.contract.String(), "{\"authorize\": {\"msgs\": [], \"sender\": \"osmo111111111111111111111111111111111111111\"}}")
-	suite.T().Log("Created message")
 	res, err := suite.msgServer.Execute(sdk.WrapSDKContext(suite.Ctx), execMsg)
-	suite.T().Log("received response")
 	suite.T().Log(res, err)
 	suite.T().Log("TestSimpleMsgExec end")
-	//suite.defaultDenom = res.GetNewTokenDenom()
 }
