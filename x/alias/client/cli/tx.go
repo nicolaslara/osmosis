@@ -2,8 +2,6 @@ package cli
 
 import (
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -32,9 +30,9 @@ func GetTxCmd() *cobra.Command {
 // NewExecCmd broadcast MsgExec
 func NewExecCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "exec [msgs] [as]",
+		Use:   "exec [msg] [as]",
 		Short: "Execute a list of messages as another user",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(2), // ToDo: Better arg definition (maybe --as <alias>?)
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -45,7 +43,7 @@ func NewExecCmd() *cobra.Command {
 
 			sender := clientCtx.GetFromAddress()
 
-			msg := types.NewMsgExec(sender.String(), args[1], []sdk.Msg{})
+			msg := types.NewMsgExec(sender.String(), args[1], args[0])
 
 			return tx.GenerateOrBroadcastTxWithFactory(clientCtx, txf, msg)
 		},

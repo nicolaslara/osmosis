@@ -346,6 +346,7 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
 	aliasKeeper := aliaskeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[aliastypes.StoreKey],
+		*appKeepers.WasmKeeper,
 	)
 	appKeepers.AliasKeeper = &aliasKeeper
 

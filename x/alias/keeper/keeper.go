@@ -8,13 +8,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	"github.com/osmosis-labs/osmosis/v10/x/alias/types"
 )
 
 type (
 	Keeper struct {
-		cdc      codec.Codec
-		storeKey sdk.StoreKey
+		cdc        codec.Codec
+		storeKey   sdk.StoreKey
+		wasmKeeper wasmkeeper.Keeper
 	}
 )
 
@@ -22,11 +24,13 @@ type (
 func NewKeeper(
 	cdc codec.Codec,
 	storeKey sdk.StoreKey,
+	wasmKeeper wasmkeeper.Keeper,
 ) Keeper {
 
 	return Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
+		cdc:        cdc,
+		storeKey:   storeKey,
+		wasmKeeper: wasmKeeper,
 	}
 }
 
@@ -42,6 +46,11 @@ func (k Keeper) GetContractStore(ctx sdk.Context) sdk.KVStore {
 	return prefix.NewStore(store, []byte("Contract"))
 }
 
-func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, msgs []sdk.Msg) ([][]byte, error) {
-	return [][]byte{{'g', 'o', 'l', 'a', 'n', 'g'}}, nil
+func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, msg string) ([]byte, error) {
+	//msg := msgs[0].String()
+	result, err := k.wasmKeeper.QuerySmart(ctx, as, []byte(msg))
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

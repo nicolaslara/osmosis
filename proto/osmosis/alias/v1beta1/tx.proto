@@ -8,11 +8,11 @@ import "google/protobuf/any.proto";
 
 option go_package = "github.com/osmosis-labs/osmosis/v10/x/alias/types";
 
-// Msg defines the alias module's gRPC message service.
+// Msg defines the alias module's gRPC message service.b
 service Msg { rpc Execute(MsgExec) returns (MsgExecResponse); }
 
 // MsgExecResponse defines the Msg/MsgExecResponse response type.
-message MsgExecResponse { repeated bytes results = 1; }
+message MsgExecResponse { bytes results = 1; }
 
 // MsgExec attempts to execute the provided messages using
 // authorizations granted to the grantee. Each message should have only
@@ -20,6 +20,5 @@ message MsgExecResponse { repeated bytes results = 1; }
 message MsgExec {
   string sender = 1 [ (gogoproto.moretags) = "yaml:\"sender\"" ];
   string as = 2 [ (gogoproto.moretags) = "yaml:\"as\"" ];
-  repeated google.protobuf.Any msgs = 3
-      [ (cosmos_proto.accepts_interface) = "sdk.Msg" ];
+  string msg = 3 [ (gogoproto.moretags) = "yaml:\"msg\"" ];
 }

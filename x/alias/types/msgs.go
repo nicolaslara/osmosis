@@ -1,7 +1,6 @@
 package types
 
 import (
-	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -13,20 +12,11 @@ const (
 var _ sdk.Msg = &MsgExec{}
 
 // NewMsgExec creates a msg to create a new denom
-func NewMsgExec(sender, as string, msgs []sdk.Msg) *MsgExec {
-	msgsAny := make([]*cdctypes.Any, len(msgs))
-	for i, msg := range msgs {
-		any, err := cdctypes.NewAnyWithValue(msg)
-		if err != nil {
-			panic(err)
-		}
-
-		msgsAny[i] = any
-	}
+func NewMsgExec(sender, as, msg string) *MsgExec {
 	return &MsgExec{
 		Sender: sender,
 		As:     as,
-		Msgs:   msgsAny,
+		Msg:    msg,
 	}
 }
 
@@ -53,19 +43,4 @@ func (m MsgExec) GetSignBytes() []byte {
 func (m MsgExec) GetSigners() []sdk.AccAddress {
 	sender, _ := sdk.AccAddressFromBech32(m.Sender)
 	return []sdk.AccAddress{sender}
-}
-
-// GetMessages returns the cache values from the MsgExecAuthorized.Msgs if present.
-// This is copied from Authz.
-func (msg MsgExec) GetMessages() ([]sdk.Msg, error) {
-	msgs := make([]sdk.Msg, len(msg.Msgs))
-	for i, msgAny := range msg.Msgs {
-		msg, ok := msgAny.GetCachedValue().(sdk.Msg)
-		if !ok {
-			return nil, sdkerrors.ErrInvalidRequest.Wrapf("messages contains %T which is not a sdk.MsgRequest", msgAny)
-		}
-		msgs[i] = msg
-	}
-
-	return msgs, nil
 }
