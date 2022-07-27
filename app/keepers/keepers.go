@@ -347,6 +347,7 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
 		appCodec,
 		appKeepers.keys[aliastypes.StoreKey],
 		*appKeepers.WasmKeeper,
+		*bApp.MsgServiceRouter(),
 	)
 	appKeepers.AliasKeeper = &aliasKeeper
 
