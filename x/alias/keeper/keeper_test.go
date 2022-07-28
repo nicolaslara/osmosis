@@ -98,10 +98,12 @@ func (suite *KeeperTestSuite) TestSimpleMsgExec() {
 	require.NoError(suite.T(), err)
 
 	// tmp message to match the interface. The sender will be set by the chain
-	msg := fmt.Sprintf("{\"authorize\": {\"msgs\": [], \"sender\": \"%s\"}}", suite.TestAccs[1])
+	msg := fmt.Sprintf("{\"bank\":{\"send\":{\"to_address\":\"%s\",\"amount\":[{\"denom\":\"uosmo\",\"amount\":\"2\"}]}}}", suite.TestAccs[1])
 	suite.T().Log("msg", msg)
 	execMsg := types.NewMsgExec(sender, suite.contract.String(), msg)
 	res, err := suite.msgServer.Execute(sdk.WrapSDKContext(suite.Ctx), execMsg)
 	suite.T().Log(res, err)
+	suite.Require().NoError(err)
+
 	suite.T().Log("TestSimpleMsgExec end")
 }

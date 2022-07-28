@@ -3,6 +3,7 @@ package keepers
 import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -130,6 +131,7 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
 	wasmConfig wasm.Config,
 	wasmEnabledProposals []wasm.ProposalType,
 	wasmOpts []wasm.Option,
+	txConfig client.TxConfig,
 	blockedAddress map[string]bool,
 ) {
 	// Add 'normal' keepers
@@ -347,6 +349,7 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
 		appCodec,
 		appKeepers.keys[aliastypes.StoreKey],
 		*appKeepers.WasmKeeper,
+		txConfig,
 		*bApp.MsgServiceRouter(),
 	)
 	appKeepers.AliasKeeper = &aliasKeeper
