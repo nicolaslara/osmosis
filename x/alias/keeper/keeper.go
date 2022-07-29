@@ -5,21 +5,22 @@ import (
 	"fmt"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	appparams "github.com/osmosis-labs/osmosis/v10/app/params"
 	"github.com/osmosis-labs/osmosis/v10/x/alias/types"
 )
 
 type (
 	Keeper struct {
-		cdc        codec.Codec
-		storeKey   sdk.StoreKey
-		wasmKeeper wasmkeeper.Keeper
-		txConfig   client.TxConfig
-		router     baseapp.MsgServiceRouter
+		cdc            codec.Codec
+		storeKey       sdk.StoreKey
+		wasmKeeper     wasmkeeper.Keeper
+		encodingConfig appparams.EncodingConfig
+		router         baseapp.MsgServiceRouter
 	}
 )
 
@@ -28,16 +29,16 @@ func NewKeeper(
 	cdc codec.Codec,
 	storeKey sdk.StoreKey,
 	wasmKeeper wasmkeeper.Keeper,
-	txConfig client.TxConfig,
+	encodingConfig appparams.EncodingConfig,
 	router baseapp.MsgServiceRouter,
 ) Keeper {
 
 	return Keeper{
-		cdc:        cdc,
-		storeKey:   storeKey,
-		wasmKeeper: wasmKeeper,
-		txConfig:   txConfig,
-		router:     router,
+		cdc:            cdc,
+		storeKey:       storeKey,
+		wasmKeeper:     wasmKeeper,
+		encodingConfig: encodingConfig,
+		router:         router,
 	}
 }
 
@@ -110,6 +111,35 @@ func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, 
 	//	},
 	//)
 
+	var anyMsg cdctypes.Any
+	testMsg2 := fmt.Sprintf(
+		`{"@type":"/cosmos.bank.v1beta1.MsgSend",
+	"from_address":"%s",
+	"to_address":"%s",
+	"amount":[{"denom":"uosmo","amount":"1"}]}`, sender, sender)
+	if err := k.cdc.UnmarshalJSON([]byte(testMsg2), &anyMsg); err != nil {
+		return nil, sdkerrors.Wrapf(err, "invalid result format (expected json); result %v", string(result))
+	}
+
+	fmt.Println("AnyMsg", anyMsg)
+
+	//registry := cdctypes.NewInterfaceRegistry()
+	//registry.RegisterImplementations((*sdk.Msg)(nil), &testdata.TestMsg{})
+	//registry := k.encodingConfig.InterfaceRegistry
+	//protoCdc := codec.NewProtoCodec(registry)
+	//
+	//testMsg3 := sdk.Msg(&testdata.TestMsg{Signers: []string{"addr"}})
+	//bz, err := protoCdc.MarshalInterface(testMsg3)
+	//var msg2 sdk.Msg
+	//err = protoCdc.UnmarshalInterface(bz, &msg2)
+
+	registry := k.encodingConfig.InterfaceRegistry
+	protoCdc := codec.NewProtoCodec(registry)
+	var msg2 sdk.Msg
+	err = protoCdc.UnmarshalInterface(anyMsg.Value, &msg2)
+
+	fmt.Println("AnyMsg2", msg2)
+
 	testMsg := fmt.Sprintf(
 		`{"body":
 {"messages":[
@@ -123,9 +153,8 @@ func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, 
 "signatures":[]}`, sender, sender)
 
 	//encodingConfig := app.MakeEncodingConfig()
-
 	// This works. Now just need to replace the decoder with my own
-	tx, err := k.txConfig.TxJSONDecoder()([]byte(testMsg))
+	tx, err := k.encodingConfig.TxConfig.TxJSONDecoder()([]byte(testMsg))
 
 	if err != nil {
 		return nil, err
@@ -133,6 +162,12 @@ func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, 
 
 	msg := tx.GetMsgs()[0]
 	fmt.Println(msg)
+
+	bz, err := protoCdc.MarshalInterface(msg)
+	fmt.Println("HERE", string(bz))
+	var bz2 sdk.Msg
+	err = protoCdc.UnmarshalInterface(bz, &bz2)
+	fmt.Println("HERE", bz2)
 
 	// // Consider using the same dispatcher as cosmwasm. This would need to be initialized with the keeper
 	//messager := wasmkeeper.NewDefaultMessageHandler(k.router, channelKeeper, capabilityKeeper, bankKeeper, cdc, portSource),

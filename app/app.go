@@ -198,7 +198,7 @@ func NewOsmosisApp(
 		wasmConfig,
 		wasmEnabledProposals,
 		wasmOpts,
-		encodingConfig.TxConfig,
+		encodingConfig,
 		app.BlockedAddrs(),
 	)
 

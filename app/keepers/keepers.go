@@ -3,7 +3,6 @@ package keepers
 import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -33,6 +32,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	appparams "github.com/osmosis-labs/osmosis/v10/app/params"
 	aliastypes "github.com/osmosis-labs/osmosis/v10/x/alias/types"
 
 	icahost "github.com/cosmos/ibc-go/v3/modules/apps/27-interchain-accounts/host"
@@ -131,7 +131,7 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
 	wasmConfig wasm.Config,
 	wasmEnabledProposals []wasm.ProposalType,
 	wasmOpts []wasm.Option,
-	txConfig client.TxConfig,
+	encodingConfig appparams.EncodingConfig,
 	blockedAddress map[string]bool,
 ) {
 	// Add 'normal' keepers
@@ -349,7 +349,7 @@ func (appKeepers *AppKeepers) InitNormalKeepers(
 		appCodec,
 		appKeepers.keys[aliastypes.StoreKey],
 		*appKeepers.WasmKeeper,
-		txConfig,
+		encodingConfig,
 		*bApp.MsgServiceRouter(),
 	)
 	appKeepers.AliasKeeper = &aliasKeeper
