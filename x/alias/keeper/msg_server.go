@@ -36,7 +36,7 @@ func (server msgServer) Execute(goCtx context.Context, msg *types.MsgExec) (*typ
 	// when sending decosing it before sending it if it were to be approved by the contract.
 	// Though maybe just a bit of validation in ValidateBasic is in order (checking it's valid json)
 
-	results, err := server.Keeper.Exec(ctx, sender, as, msg.Msg)
+	results, err := server.Keeper.Exec(ctx, sender, msg.MsgType, msg.Msg, as)
 	if err != nil {
 		return nil, err
 	}

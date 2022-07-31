@@ -6,7 +6,6 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
-	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -49,127 +48,63 @@ func (k Keeper) GetContractStore(ctx sdk.Context) sdk.KVStore {
 	return prefix.NewStore(store, []byte("Contract"))
 }
 
-func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, msgAsJson string) ([]byte, error) {
-	// ToDo: This should be done before getting here
+func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, msgType string, msgAsJson string, as sdk.AccAddress) ([]byte, error) {
+	// ToDo: Currently using "as" as the contract addr. This should be extracted as config for this module.
+
+	// Validate message type and message.
 	msgMap := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(msgAsJson), &msgMap); err != nil {
 		return nil, sdkerrors.Wrapf(err, "invalid message format (expected json); message %v", msgAsJson)
 	}
+
+	// ToDo: Validate msgType
+	validatedType := msgType
+	// Add message type to the original message
+	msgMap["@type"] = validatedType
+
+	// The full message includes the validated type
 	validatedMsg, err := json.Marshal(msgMap)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "can't reconvert message to json; message %v", msgMap)
 	}
-	fmt.Println(string(validatedMsg))
-	//err := wasmtypes.IsJSONObjectWithTopLevelKey([]byte(msgAsJson), [])
+	fmt.Println("validatedMsg: ", string(validatedMsg))
 
-	authMsg := fmt.Sprintf("{\"authorize\": {\"msgs\": [%s], \"sender\": \"%s\"}}", validatedMsg, sender)
-	fmt.Println(authMsg)
-	result, err := k.wasmKeeper.QuerySmart(ctx, as, []byte(authMsg))
+	registry := k.encodingConfig.InterfaceRegistry
+	protoCdc := codec.NewProtoCodec(registry)
 
+	var msg sdk.Msg
+	err = protoCdc.UnmarshalInterfaceJSON([]byte(validatedMsg), &msg)
+	fmt.Println("msg", msg)
+
+	jsonMsg, err := protoCdc.MarshalInterfaceJSON(msg)
 	if err != nil {
 		return nil, err
 	}
 
-	// ToDo: Check result of the query and fail if it's not authorized
-	fmt.Println(string(result))
-	resultMap := map[string]interface{}{}
-	if err := json.Unmarshal(result, &resultMap); err != nil {
-		return nil, sdkerrors.Wrapf(err, "invalid result format (expected json); result %v", string(result))
+	fmt.Println("jsonMsg", string(jsonMsg))
+
+	// ToDo: How do I convert msgTypes to the message format cosmwasm expects? (/cosmos.bank.v1beta1.MsgSend -> {"bank": "send": ...}})
+	authMsg := fmt.Sprintf(`{"authorize": {"msgs": [{"bank": {"send": %s}}], "sender": "%s"}}`, jsonMsg, sender)
+	fmt.Println(authMsg)
+	response, err := k.wasmKeeper.QuerySmart(ctx, as, []byte(authMsg))
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "Failed to query authorization contract; query: %v", authMsg)
 	}
 
-	// ToDo: Create an interface or type for this
-	if !resultMap["authorized"].(bool) {
+	fmt.Println("Authorization Query response:", string(response))
+	// Validate the query response
+	responseMap := map[string]interface{}{}
+	if err := json.Unmarshal(response, &responseMap); err != nil {
+		return nil, sdkerrors.Wrapf(err, "invalid response format (expected json); response: %v", string(response))
+	}
+
+	// ToDo: Create a response type for this
+	if !responseMap["authorized"].(bool) {
 		// ToDo: Add events?
 		return nil, sdkerrors.Wrapf(err, "The sender is not authorized to execute that message")
 	}
 
-	// Experiment of how to send a custom message through the handler. If authorized, this should be the received message
-
-	//// This doesn't work because the value needs to be proto-encoded
-	//testMsg := `{
-	//	"type_url":"cosmos-sdk/MsgSubmitProposal",
-	//	"value":{"content":{"type":"wasm/MigrateContractProposal","value":{"msg":{"foo":"bar"}}},"initial_deposit":[]}
-	//}`
-	//
-	//var stargateMsg *wasmtypes.StargateMsg
-	//if err := json.Unmarshal([]byte(testMsg), &stargateMsg); err != nil {
-	//	return nil, err
-	//}
-	//
-	//encoder := wasmkeeper.EncodeStargateMsg(types.ModuleCdc)
-	//msgs, err := encoder(sender, stargateMsg)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//
-	//testMsg := sdk.Msg(
-	//	&banktypes.MsgSend{
-	//		FromAddress: sender.String(),
-	//		ToAddress:   sender.String(),
-	//		Amount:      sdk.NewCoins(sdk.NewCoin("uosmo", sdk.NewInt(1))),
-	//	},
-	//)
-
-	var anyMsg cdctypes.Any
-	testMsg2 := fmt.Sprintf(
-		`{"@type":"/cosmos.bank.v1beta1.MsgSend",
-	"from_address":"%s",
-	"to_address":"%s",
-	"amount":[{"denom":"uosmo","amount":"1"}]}`, sender, sender)
-	if err := k.cdc.UnmarshalJSON([]byte(testMsg2), &anyMsg); err != nil {
-		return nil, sdkerrors.Wrapf(err, "invalid result format (expected json); result %v", string(result))
-	}
-
-	fmt.Println("AnyMsg", anyMsg)
-
-	//registry := cdctypes.NewInterfaceRegistry()
-	//registry.RegisterImplementations((*sdk.Msg)(nil), &testdata.TestMsg{})
-	//registry := k.encodingConfig.InterfaceRegistry
-	//protoCdc := codec.NewProtoCodec(registry)
-	//
-	//testMsg3 := sdk.Msg(&testdata.TestMsg{Signers: []string{"addr"}})
-	//bz, err := protoCdc.MarshalInterface(testMsg3)
-	//var msg2 sdk.Msg
-	//err = protoCdc.UnmarshalInterface(bz, &msg2)
-
-	registry := k.encodingConfig.InterfaceRegistry
-	protoCdc := codec.NewProtoCodec(registry)
-	var msg2 sdk.Msg
-	err = protoCdc.UnmarshalInterface(anyMsg.Value, &msg2)
-
-	fmt.Println("AnyMsg2", msg2)
-
-	testMsg := fmt.Sprintf(
-		`{"body":
-{"messages":[
-{"@type":"/cosmos.bank.v1beta1.MsgSend",
-"from_address":"%s",
-"to_address":"%s",
-"amount":[{"denom":"uosmo","amount":"1"}]}
-],
-"memo":"","timeout_height":"0","extension_options":[],"non_critical_extension_options":[]},
-"auth_info":{"signer_infos":[],"fee":{"amount":[],"gas_limit":"200000","payer":"","granter":""}},
-"signatures":[]}`, sender, sender)
-
-	//encodingConfig := app.MakeEncodingConfig()
-	// This works. Now just need to replace the decoder with my own
-	tx, err := k.encodingConfig.TxConfig.TxJSONDecoder()([]byte(testMsg))
-
-	if err != nil {
-		return nil, err
-	}
-
-	msg := tx.GetMsgs()[0]
-	fmt.Println(msg)
-
-	bz, err := protoCdc.MarshalInterface(msg)
-	fmt.Println("HERE", string(bz))
-	var bz2 sdk.Msg
-	err = protoCdc.UnmarshalInterface(bz, &bz2)
-	fmt.Println("HERE", bz2)
-
-	// // Consider using the same dispatcher as cosmwasm. This would need to be initialized with the keeper
+	// // Consider using the same dispatcher as cosmwasm. This would need to be initialized with the keeper?
 	//messager := wasmkeeper.NewDefaultMessageHandler(k.router, channelKeeper, capabilityKeeper, bankKeeper, cdc, portSource),
 
 	handler := k.router.Handler(msg)
@@ -177,7 +112,7 @@ func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, 
 		return nil, sdkerrors.ErrUnknownRequest.Wrapf("unrecognized message route: %s", sdk.MsgTypeURL(msg))
 	}
 
-	msgResp, err := handler(ctx, msg)
+	msgResponse, err := handler(ctx, msg)
 	if err != nil {
 		return nil, sdkerrors.Wrapf(err, "failed to execute message; message %v", msg)
 	}
@@ -186,17 +121,22 @@ func (k Keeper) Exec(ctx sdk.Context, sender sdk.AccAddress, as sdk.AccAddress, 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			types.TypeMsgExec,
-			sdk.NewAttribute("data", string(msgResp.Data)),
+			sdk.NewAttribute("data", string(msgResponse.Data)),
 		),
 	})
 
 	// emit the events from the dispatched actions
-	events := msgResp.Events
+	events := msgResponse.Events
 	sdkEvents := make([]sdk.Event, 0, len(events))
 	for i := 0; i < len(events); i++ {
 		sdkEvents = append(sdkEvents, sdk.Event(events[i]))
 	}
 	ctx.EventManager().EmitEvents(sdkEvents)
 
-	return result, nil
+	asBytes, err := msgResponse.Marshal()
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed to marshal response; response %v", msgResponse)
+	}
+
+	return asBytes, nil
 }

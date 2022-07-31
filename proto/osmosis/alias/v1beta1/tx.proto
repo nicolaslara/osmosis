@@ -19,6 +19,7 @@ message MsgExecResponse { bytes results = 1; }
 // one signer corresponding to the granter of the authorization.
 message MsgExec {
   string sender = 1 [ (gogoproto.moretags) = "yaml:\"sender\"" ];
-  string as = 2 [ (gogoproto.moretags) = "yaml:\"as\"" ];
+  string msgType = 2 [ (gogoproto.moretags) = "yaml:\"msg_type\"" ];
   string msg = 3 [ (gogoproto.moretags) = "yaml:\"msg\"" ];
+  string as = 4 [ (gogoproto.moretags) = "yaml:\"as\"" ];
 }

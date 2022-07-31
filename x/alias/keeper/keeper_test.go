@@ -92,15 +92,15 @@ func (suite *KeeperTestSuite) TestSimpleMsgExec() {
 	err := simapp.FundAccount(
 		suite.App.BankKeeper,
 		suite.Ctx,
-		suite.TestAccs[0],
+		suite.TestAccs[1],
 		sdk.NewCoins(sdk.NewInt64Coin("uosmo", 1_000_000_000)),
 	)
 	require.NoError(suite.T(), err)
 
 	// tmp message to match the interface. The sender will be set by the chain
-	msg := fmt.Sprintf("{\"bank\":{\"send\":{\"to_address\":\"%s\",\"amount\":[{\"denom\":\"uosmo\",\"amount\":\"2\"}]}}}", suite.TestAccs[1])
+	msg := fmt.Sprintf(`{"from_address": "%s", "to_address":"%s","amount":[{"denom":"uosmo","amount":"1"}]}`, suite.TestAccs[1], suite.TestAccs[1])
 	suite.T().Log("msg", msg)
-	execMsg := types.NewMsgExec(sender, suite.contract.String(), msg)
+	execMsg := types.NewMsgExec(sender, "/cosmos.bank.v1beta1.MsgSend", msg, suite.contract.String())
 	res, err := suite.msgServer.Execute(sdk.WrapSDKContext(suite.Ctx), execMsg)
 	suite.T().Log(res, err)
 	suite.Require().NoError(err)

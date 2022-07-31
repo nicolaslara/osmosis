@@ -12,11 +12,12 @@ const (
 var _ sdk.Msg = &MsgExec{}
 
 // NewMsgExec creates a msg to create a new denom
-func NewMsgExec(sender, as, msg string) *MsgExec {
+func NewMsgExec(sender, msgType, msg, as string) *MsgExec {
 	return &MsgExec{
-		Sender: sender,
-		As:     as,
-		Msg:    msg,
+		Sender:  sender,
+		MsgType: msgType,
+		Msg:     msg,
+		As:      as,
 	}
 }
 

@@ -10,6 +10,11 @@ import (
 	"github.com/osmosis-labs/osmosis/v10/x/alias/types"
 )
 
+// Flag names and values
+const (
+	FlagAs = "as"
+)
+
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -30,9 +35,9 @@ func GetTxCmd() *cobra.Command {
 // NewExecCmd broadcast MsgExec
 func NewExecCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "exec [msg] [as]",
+		Use:   "exec [msgType] [msgJson]",
 		Short: "Execute a list of messages as another user",
-		Args:  cobra.ExactArgs(2), // ToDo: Better arg definition (maybe --as <alias>?)
+		Args:  cobra.ExactArgs(2), // ToDo: Better arg definition?
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -43,12 +48,18 @@ func NewExecCmd() *cobra.Command {
 
 			sender := clientCtx.GetFromAddress()
 
-			msg := types.NewMsgExec(sender.String(), args[1], args[0])
+			as, err := cmd.Flags().GetString(FlagAs)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgExec(sender.String(), args[1], args[0], as)
 
 			return tx.GenerateOrBroadcastTxWithFactory(clientCtx, txf, msg)
 		},
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(FlagAs, "", "The addr to execute the message as")
 	return cmd
 }
