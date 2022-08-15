@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         workdir: [./x/ibc-rate-limit]
+        output: [./x/ibc-rate-limit/testdata/rate_limit.wasm]
 
     steps:
       - name: Checkout sources
@@ -32,6 +33,13 @@ jobs:
         run: >
           cargo test
 
+      - name: Check Test Data
+        working-directory: ${{ matrix.workdir }}
+        if: ${{ matrix.output != null }}
+        run: >
+          diff ${{ matrix.output }} ./artifacts/*.wasm
+  
+
   lints:
     name: Cosmwasm Lints
     runs-on: ubuntu-latest
@@ -47,16 +55,10 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-          components: rustfmt, clippy
+          components: rustfmt
           target: wasm32-unknown-unknown
 
       - name: Format
         working-directory: ${{ matrix.workdir }}
         run: >
-          echo `pwd`;
           cargo fmt --all -- --check
-
-      - name: Clippy
-        working-directory: ${{ matrix.workdir }}
-        run: >
-          cargo clippy --all-targets -- -D warnings
