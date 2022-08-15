@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         workdir: [./x/ibc-rate-limit]
-        output: [./x/ibc-rate-limit/testdata/rate_limit.wasm]
+        output: [./x/ibc-rate-limit/testdata/rate_limiter.wasm]
 
     steps:
       - name: Checkout sources
