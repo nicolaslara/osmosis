@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         workdir: [./x/ibc-rate-limit]
-        output: [./x/ibc-rate-limit/testdata/rate_limiter.wasm]
+        output: [./testdata/rate_limiter.wasm]
 
     steps:
       - name: Checkout sources
@@ -39,7 +39,7 @@ jobs:
         if: ${{ matrix.output != null }}
         run: >
           ls ${{ matrix.output }};
-          ls ${{ matrix.output }}/artifacts;
+          ls ./artifacts;
           diff ${{ matrix.output }} ./artifacts/*.wasm
   
 
