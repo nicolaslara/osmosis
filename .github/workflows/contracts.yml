@@ -1,6 +1,8 @@
-on: [push, pull_request]
-
 name: Cosmwasm Contracts
+on:
+  pull_request:
+  push:
+
 
 jobs:
   test:
@@ -16,11 +18,13 @@ jobs:
 
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
-        working-directory: ${{ matrix.arch }}
         with:
           toolchain: stable
           components: rustfmt, clippy
           target: wasm32-unknown-unknown
+
+      - name: Build
+        working-directory: ${{ matrix.arch }}
         run: >
           cargo build --release --all-features;
           cargo test
