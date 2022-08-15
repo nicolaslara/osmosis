@@ -24,8 +24,9 @@ jobs:
           target: wasm32-unknown-unknown
 
       - name: Build
-        working-directory: ${{ matrix.arch }}
+        working-directory: ${{ matrix.workdir }}
         run: >
+          echo `pwd`;
           cargo build --release --all-features;
           cargo test
 #
