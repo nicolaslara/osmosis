@@ -26,7 +26,7 @@ jobs:
       - name: Build
         working-directory: ${{ matrix.workdir }}
         run: >
-          cargo build --release
+          cargo wasm
 
       - name: Test
         working-directory: ${{ matrix.workdir }}
@@ -37,6 +37,8 @@ jobs:
         working-directory: ${{ matrix.workdir }}
         if: ${{ matrix.output != null }}
         run: >
+          ls ${{ matrix.output }};
+          ls ${{ matrix.output }}/artifacts;
           diff ${{ matrix.output }} ./artifacts/*.wasm
   
 
