@@ -3,6 +3,10 @@ on: [push, pull_request]
 
 name: Cosmwasm Contracts
 
+defaults:
+  run:
+    working-directory: ./x/ibc-rate-limit
+
 jobs:
   test:
     name: Test Suite
