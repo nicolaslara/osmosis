@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         workdir: [./x/ibc-rate-limit]
-#        output: [./x/ibc-rate-limit/testdata/rate_limit.wasm]
+        output: [./x/ibc-rate-limit/testdata/rate_limit.wasm]
 
     steps:
       - name: Checkout sources
@@ -34,13 +34,13 @@ jobs:
         run: >
           cargo test
 
-#      - name: Check Test Data
-#        working-directory: ${{ matrix.workdir }}
-#        if: ${{ matrix.output != null }}
-#        run: >
-#          ls ${{ matrix.output }};
-#          ls ${{ matrix.output }}/artifacts;
-#          diff ${{ matrix.output }} ./artifacts/*.wasm
+      - name: Check Test Data
+        working-directory: ${{ matrix.workdir }}
+        if: ${{ matrix.output != null }}
+        run: >
+          ls ${{ matrix.output }};
+          ls ${{ matrix.output }}/artifacts;
+          diff ${{ matrix.output }} ./artifacts/*.wasm
   
 
   lints:
