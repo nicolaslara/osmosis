@@ -38,9 +38,10 @@ jobs:
         working-directory: ${{ matrix.workdir }}
         if: ${{ matrix.output != null }}
         run: >
-          ls ${{ matrix.output }};
-          ls ./artifacts;
-          diff ${{ matrix.output }} ./artifacts/*.wasm
+          ls -R .
+#          ls ${{ matrix.output }};
+#          ls ./artifacts;
+#          diff ${{ matrix.output }} ./artifacts/*.wasm
   
 
   lints:
