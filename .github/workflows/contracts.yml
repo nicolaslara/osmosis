@@ -35,6 +35,10 @@ jobs:
   lints:
     name: Cosmwasm Lints
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workdir: [./x/ibc-rate-limit]
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
