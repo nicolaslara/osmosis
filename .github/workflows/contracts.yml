@@ -1,65 +1,69 @@
-
 on: [push, pull_request]
 
 name: Cosmwasm Contracts
-
-defaults:
-  run:
-    working-directory: ./x/ibc-rate-limit
 
 jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workdir: [./x/ibc-rate-limit]
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
 
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          toolchain: stable
-          command: test
-          args: --locked
-        env:
-          RUST_BACKTRACE: 1
-
-      - name: Compile WASM contract
-        uses: actions-rs/cargo@v1
-        with:
-          toolchain: stable
-          command: wasm
-          args: --locked
-
-  lints:
-    name: Lints
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+        working-directory: ${{ matrix.arch }}
         with:
           toolchain: stable
           components: rustfmt, clippy
-
-      - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          toolchain: stable
-          command: fmt
-          args: --all -- --check
-
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          toolchain: stable
-          command: clippy
-          args: --all-targets -- -D warnings
+          target: wasm32-unknown-unknown
+        run: >
+          cargo build --release --all-features;
+          cargo test
+#
+#      - name: Run tests
+#        uses: actions-rs/cargo@v1
+#        with:
+#          toolchain: stable
+#          command: test
+#          args: --locked
+#        env:
+#          RUST_BACKTRACE: 1
+#
+#      - name: Compile WASM contract
+#        uses: actions-rs/cargo@v1
+#        with:
+#          toolchain: stable
+#          command: wasm
+#          args: --locked
+#
+#  lints:
+#    name: Lints
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout sources
+#        uses: actions/checkout@v2
+#
+#      - name: Install stable toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          components: rustfmt, clippy
+#
+#      - name: Run cargo fmt
+#        uses: actions-rs/cargo@v1
+#        with:
+#          toolchain: stable
+#          command: fmt
+#          args: --all -- --check
+#
+#      - name: Run cargo clippy
+#        uses: actions-rs/cargo@v1
+#        with:
+#          toolchain: stable
+#          command: clippy
+#          args: --all-targets -- -D warnings
