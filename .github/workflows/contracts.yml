@@ -25,15 +25,15 @@ jobs:
       - name: Build
         working-directory: ${{ matrix.workdir }}
         run: >
-          cargo build --release --all-features;
+          cargo build --release
 
-      - name: Build
+      - name: Test
         working-directory: ${{ matrix.workdir }}
         run: >
           cargo test
 
   lints:
-    name: Lints
+    name: Cosmwasm Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -46,12 +46,13 @@ jobs:
           components: rustfmt, clippy
           target: wasm32-unknown-unknown
 
-      - name: Build
+      - name: Format
         working-directory: ${{ matrix.workdir }}
         run: >
+          echo `pwd`;
           cargo fmt --all -- --check
 
-      - name: Build
+      - name: Clippy
         working-directory: ${{ matrix.workdir }}
         run: >
           cargo clippy --all-targets -- -D warnings
